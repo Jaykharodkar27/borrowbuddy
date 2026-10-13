@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+  <h1 class="text-2xl font-bold mb-4">My earnings</h1>
+
+  <div class="grid grid-cols-2 gap-4 mb-2">
+    <div class="bg-white rounded shadow p-4">
+      <p class="text-sm text-gray-500">Earned (returned rentals)</p>
+      <p class="text-3xl font-bold text-green-600">₹{{ total_earned }}</p>
+    </div>
+    <div class="bg-white rounded shadow p-4">
+      <p class="text-sm text-gray-500">Paid, not yet returned</p>
+      <p class="text-3xl font-bold text-indigo-600">₹{{ on_hold }}</p>
+    </div>
+  </div>
+  <p class="text-xs text-gray-500 mb-8">
+    Amounts are after the {{ fee_percent }}% platform fee. This is a demo ledger, so no real payout is made.
+  </p>
+
+  <h2 class="text-xl font-semibold mb-3">Completed paid rentals</h2>
+  <div class="space-y-2">
+    {% for p in completed %}
+      <div class="bg-white rounded shadow p-3 flex items-center justify-between">
+        <div>
+          <p class="font-semibold">{{ p.request.item.title }}</p>
+          <p class="text-sm text-gray-500">
+            {{ p.request.start_date }} to {{ p.request.end_date }} ·
+            {{ p.request.days }} day{{ p.request.days|pluralize }} · {{ p.request.borrower.username }}
+          </p>
+          <p class="text-xs text-gray-400">Paid ₹{{ p.amount }} − fee ₹{{ p.platform_fee }}</p>
+        </div>
+        <span class="font-semibold text-green-700">₹{{ p.lender_amount }}</span>
+      </div>
+    {% empty %}
+      <p class="text-gray-500">No paid rentals completed yet. Set a price on your items to start earning.</p>
+    {% endfor %}
+  </div>
+{% endblock %}

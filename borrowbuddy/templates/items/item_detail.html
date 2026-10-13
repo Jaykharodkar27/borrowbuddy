@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+  {% if item.image %}
+    <img src="{{ item.image.url }}" alt="{{ item.title }}" class="w-full max-h-96 object-cover rounded mb-4">
+  {% endif %}
+  <h1 class="text-3xl font-bold">{{ item.title }}</h1>
+  <p class="text-gray-500 mb-4">{{ item.category }} · Lent by {{ item.owner.username }}</p>
+  <p class="mb-4">{{ item.description|default:"No description provided." }}</p>
+  <ul class="text-sm space-y-1">
+    <li><strong>Condition:</strong> {{ item.get_condition_display }}</li>
+    <li><strong>Price:</strong> {% if item.price_per_day %}₹{{ item.price_per_day|floatformat:"-2" }} per day{% else %}Free{% endif %}</li>
+    <li><strong>Maximum borrow period:</strong> {{ item.max_days }} days</li>
+  </ul>
+  <a href="{% url 'item_list' %}" class="inline-block mt-6 text-indigo-600 hover:underline">
+      {% if user.is_authenticated %}
+    {% if user == item.owner %}
+      <p class="mt-6 text-sm text-gray-500">This is your item.</p>
+    {% else %}
+      <a href="{% url 'request_create' item.pk %}"
+         class="inline-block mt-6 bg-indigo-600 text-white px-4 py-2 rounded">Request to borrow</a>
+    {% endif %}
+  {% else %}
+    <p class="mt-6">
+      <a href="{% url 'login' %}?next={{ request.path }}" class="text-indigo-600 underline">Log in</a>
+      to request this item.
+    </p>
+  {% endif %}← Back to all items</a>
+{% endblock %}

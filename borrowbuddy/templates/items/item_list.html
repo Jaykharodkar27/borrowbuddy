@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-bold">Available items</h1>
+  {% if user.is_authenticated %}
+    <a href="{% url 'item_create' %}" class="bg-indigo-600 text-white px-3 py-2 rounded">List an item</a>
+  {% endif %}
+</div>
+
+<form method="get" class="flex flex-wrap items-end gap-2 mb-6">
+  <input type="text" name="q" value="{{ q }}" placeholder="Search items..."
+         class="flex-1 min-w-[12rem] border rounded px-3 py-2">
+  <select name="category" class="border rounded px-3 py-2">
+    <option value="">All categories</option>
+    {% for c in categories %}
+      <option value="{{ c.pk }}" {% if selected_category == c.pk|stringformat:"s" %}selected{% endif %}>
+        {{ c.name }}
+      </option>
+    {% endfor %}
+  </select>
+  <label class="text-sm text-gray-600">Free from
+    <input type="date" name="start" value="{{ start }}" class="border rounded px-2 py-2 block">
+  </label>
+  <label class="text-sm text-gray-600">to
+    <input type="date" name="end" value="{{ end }}" class="border rounded px-2 py-2 block">
+  </label>
+  <button class="bg-indigo-600 text-white px-4 py-2 rounded">Search</button>
+  {% if q or selected_category or start or end %}
+    <a href="{% url 'item_list' %}" class="px-3 py-2 text-gray-600 hover:underline">Clear</a>
+  {% endif %}
+</form>
+
+<p class="text-sm text-gray-500 mb-3">{{ items|length }} item{{ items|length|pluralize }} found</p>
+
+<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+  {% for item in items %}
+    <a href="{% url 'item_detail' item.pk %}" class="bg-white rounded shadow hover:shadow-md overflow-hidden">
+      {% if item.image %}
+        <img src="{{ item.image.url }}" alt="{{ item.title }}" class="h-40 w-full object-cover">
+      {% else %}
+        <div class="h-40 bg-gray-200 flex items-center justify-center text-gray-500">No photo</div>
+      {% endif %}
+      <div class="p-3">
+        <h2 class="font-semibold">{{ item.title }}</h2>
+        <p class="text-sm text-gray-500">{{ item.category }} · {{ item.owner.username }}</p>
+        <p class="text-sm font-medium text-indigo-600">{% if item.price_per_day %}₹{{ item.price_per_day|floatformat:"-2" }}/day{% else %}Free{% endif %}</p>
+      </div>
+    </a>
+  {% empty %}
+    <p>No items match your search.</p>
+  {% endfor %}
+</div>
+{% endblock %}

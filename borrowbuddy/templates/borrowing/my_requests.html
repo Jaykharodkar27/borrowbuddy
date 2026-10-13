@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block content %}
+  <p class="mb-6 text-sm text-gray-600">
+    Your rating:
+    {% if my_rating.count %}
+      ★ {{ my_rating.avg|floatformat:1 }} from {{ my_rating.count }} review{{ my_rating.count|pluralize }}
+    {% else %}
+      no reviews yet
+    {% endif %}
+  </p>
+
+  <h1 class="text-2xl font-bold mb-4">Requests I made</h1>
+  <div class="space-y-2 mb-10">
+    {% for r in made %}
+      <div class="bg-white rounded shadow p-3 flex items-center justify-between gap-3">
+        <div>
+          <a href="{% url 'item_detail' r.item.pk %}" class="font-semibold hover:underline">{{ r.item.title }}</a>
+          <p class="text-sm text-gray-500">{{ r.start_date }} to {{ r.end_date }} · from {{ r.item.owner.username }}{% if r.total_price %} · ₹{{ r.total_price }}{% endif %}</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-sm px-2 py-1 rounded
+            {% if r.status == 'APPROVED' or r.status == 'RETURNED' %}bg-green-100 text-green-800
+            {% elif r.status == 'DECLINED' or r.status == 'CANCELLED' %}bg-red-100 text-red-800
+            {% elif r.status == 'COLLECTED' %}bg-blue-100 text-blue-800
+            {% else %}bg-gray-100{% endif %}">{{ r.get_status_display }}</span>
+          {% if r.is_overdue %}<span class="text-sm px-2 py-1 rounded bg-red-600 text-white">Overdue</span>{% endif %}
+          {% if r.payment_status == 'PAID' %}
+            <span class="text-sm px-2 py-1 rounded bg-green-100 text-green-800">Paid</span>
+          {% elif r.payment_status == 'REFUNDED' %}
+            <span class="text-sm px-2 py-1 rounded bg-gray-100">Refunded</span>
+          {% elif r.payment_status == 'UNPAID' and r.status == 'APPROVED' %}
+            <a href="{% url 'pay' r.pk %}" class="text-sm bg-green-600 text-white px-3 py-1 rounded">Pay ₹{{ r.total_price }}</a>
+          {% endif %}
+          {% if r.status == 'REQUESTED' or r.status == 'APPROVED' %}
+            <form method="post" action="{% url 'request_action' r.pk 'cancel' %}">
+              {% csrf_token %}
+              <button class="text-sm text-red-600 hover:underline">Cancel</button>
+            </form>
+          {% elif r.status == 'RETURNED' %}
+            {% if r.pk in reviewed_ids %}
+              <span class="text-sm text-gray-500">Reviewed ✓</span>
+            {% else %}
+              <a href="{% url 'review_create' r.pk %}" class="text-sm bg-yellow-500 text-white px-3 py-1 rounded">Rate lender</a>
+            {% endif %}
+          {% endif %}
+        </div>
+      </div>
+    {% empty %}
+      <p class="text-gray-500">You haven't requested anything yet.</p>
+    {% endfor %}
+  </div>
+
+  <h1 class="text-2xl font-bold mb-4">Requests for my items</h1>
+  <div class="space-y-2">
+    {% for r in received %}
+      <div class="bg-white rounded shadow p-3 flex items-center justify-between gap-3">
+        <div>
+          <a href="{% url 'item_detail' r.item.pk %}" class="font-semibold hover:underline">{{ r.item.title }}</a>
+          <p class="text-sm text-gray-500">{{ r.start_date }} to {{ r.end_date }} · requested by {{ r.borrower.username }}{% if r.total_price %} · ₹{{ r.total_price }}{% endif %}</p>
+          {% if r.message %}<p class="text-sm mt-1">"{{ r.message }}"</p>{% endif %}
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-sm px-2 py-1 rounded
+            {% if r.status == 'APPROVED' or r.status == 'RETURNED' %}bg-green-100 text-green-800
+            {% elif r.status == 'DECLINED' or r.status == 'CANCELLED' %}bg-red-100 text-red-800
+            {% elif r.status == 'COLLECTED' %}bg-blue-100 text-blue-800
+            {% else %}bg-gray-100{% endif %}">{{ r.get_status_display }}</span>
+          {% if r.is_overdue %}<span class="text-sm px-2 py-1 rounded bg-red-600 text-white">Overdue</span>{% endif %}
+          {% if r.payment_status == 'PAID' %}
+            <span class="text-sm px-2 py-1 rounded bg-green-100 text-green-800">Paid</span>
+          {% elif r.payment_status == 'REFUNDED' %}
+            <span class="text-sm px-2 py-1 rounded bg-gray-100">Refunded</span>
+          {% endif %}
+
+          {% if r.status == 'REQUESTED' %}
+            <form method="post" action="{% url 'request_action' r.pk 'approve' %}">
+              {% csrf_token %}
+              <button class="text-sm bg-green-600 text-white px-3 py-1 rounded">Approve</button>
+            </form>
+            <form method="post" action="{% url 'request_action' r.pk 'decline' %}">
+              {% csrf_token %}
+              <button class="text-sm bg-red-600 text-white px-3 py-1 rounded">Decline</button>
+            </form>
+          {% elif r.status == 'APPROVED' %}
+            {% if r.payment_status == 'UNPAID' %}
+              <span class="text-sm text-amber-700">Awaiting payment</span>
+            {% else %}
+              <form method="post" action="{% url 'request_action' r.pk 'collect' %}">
+                {% csrf_token %}
+                <button class="text-sm bg-indigo-600 text-white px-3 py-1 rounded">Mark collected</button>
+              </form>
+            {% endif %}
+          {% elif r.status == 'COLLECTED' %}
+            <form method="post" action="{% url 'request_action' r.pk 'return' %}">
+              {% csrf_token %}
+              <button class="text-sm bg-indigo-600 text-white px-3 py-1 rounded">Mark returned</button>
+            </form>
+          {% elif r.status == 'RETURNED' %}
+            {% if r.pk in reviewed_ids %}
+              <span class="text-sm text-gray-500">Reviewed ✓</span>
+            {% else %}
+              <a href="{% url 'review_create' r.pk %}" class="text-sm bg-yellow-500 text-white px-3 py-1 rounded">Rate borrower</a>
+            {% endif %}
+          {% endif %}
+        </div>
+      </div>
+    {% empty %}
+      <p class="text-gray-500">Nobody has requested your items yet.</p>
+    {% endfor %}
+  </div>
+{% endblock %}
